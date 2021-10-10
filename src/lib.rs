@@ -3,6 +3,7 @@ use log::LevelFilter;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
+use tokio::sync::{mpsc, watch, oneshot};
 
 mod exam;
 mod www;
@@ -43,7 +44,34 @@ fn expect_log<T: ToString>(tag: T) {
     prepare_log(tag).unwrap_or_else(|e| panic!("prepare log fatal error(s): {}", e));
 }
 
-pub async fn run_editor() {
+pub async fn run_editor() -> Result<()> {
     expect_log("editor");
-    www::run_editor().await;
+
+    let (done_tx, mut done_rx) = mpsc::channel::<i32>(1);
+    {
+        let (_shutdown0, rx) = oneshot::channel::<i32>();
+
+        let done = done_tx.clone();
+        tokio::spawn(async move {
+            let _done = done;
+            www::run_editor(rx).await;
+        });
+        let _ = tokio::signal::ctrl_c().await?;
+        log::info!("Caught ^C, quiting");
+    }
+    drop(done_tx);
+
+    println!("\nDoing graceful shutdown ...");
+    println!("Press ^C again to halt");
+
+    tokio::select! {
+        _ = done_rx.recv() => {},
+        _ = tokio::signal::ctrl_c() => {
+            println!("\nforced halt");
+            log::error!("forced halt");
+        },
+    };
+
+    log::info!("editor stopped");
+    Ok(())
 }
