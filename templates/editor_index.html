@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+
+<head>
+<link href="https://cdn.staticfile.org/twitter-bootstrap/5.1.1/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.staticfile.org/twitter-bootstrap/5.1.1/css/bootstrap-utilities.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+<title>编辑</title>
+<meta name="referrer" content="no-referrer" />
+</head>
+
+<body>
+
+<nav class="navbar navbar-light fixed-top bg-light">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <span>
+            <span id="type-title-display" class="badge bg-primary me-1">
+                未选择
+            </span>
+            <span id="template-name-display" class="badge bg-secondary me-3">
+                未选择
+            </span>
+        </span>
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel" aria-hidden=true>
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasNavbarLabel">导航</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <select class="form-select" id="select-test-type" onchange="on_test_type_changed()">
+                    <option selected value="0">未选中</option>
+                </select>
+                <select class="form-select mt-1" id="select-test-name" onchange="on_test_name_changed()">
+                    <option selected value="0">未选中</option>
+                </select>
+                <div class="input-group mt-3">
+                    <input class="form-control me-2" type="search" placeholder="用户id或空间地址" aria-label="Follow">
+                    <button class="btn btn-outline-success" type="submit" id="btn-follow">Follow</button>
+                </div>
+                <div class="d-flex mt-3">
+                    <div class="dropdown pe-3">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear-fill"></i>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" onclick="on_new_test()">新建测试</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="editor" class="pt-3" style="padding-bottom: 3em;">
+</div>
+
+<div class="modal fade" id="yes-or-no-modal" tabindex="-1" aria-labelledby="yes-or-no-modal-label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="yes-or-no-modal-label">Modal title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ...
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.staticfile.org/twitter-bootstrap/5.1.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
+<script src="/static/index.js"></script>
+</body>
+
+</html>

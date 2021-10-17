@@ -1,6 +1,6 @@
 use elearn;
 
 #[tokio::main]
-async fn main() {
-    elearn::run_editor().await;
+async fn main() -> elearn::Result<()> {
+    elearn::run_editor().await
 }
