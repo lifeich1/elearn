@@ -34,7 +34,9 @@ fn commit_test_data<T: ToString, U: ToString, V: Serialize>(typ: T, name: U, val
 }
 
 fn load_test_data<T: ToString, U: ToString, V: DeserializeOwned>(typ: T, name: U) -> Result<V> {
-    let input = File::open(test_data_path(typ, name))?;
+    let p = test_data_path(typ, name);
+    log::info!("opening {}", &p);
+    let input = File::open(p)?;
     Ok(ron::de::from_reader(input)?)
 }
 

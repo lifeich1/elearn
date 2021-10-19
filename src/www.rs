@@ -40,6 +40,25 @@ macro_rules! render {
     };
 }
 
+macro_rules! str_decode {
+    (@inner $ident:ident, $e:ident, $return:expr) => {
+        let $ident = match urlencoding::decode(&$ident) {
+            Ok(v) => v,
+            Err($e) => {
+                log::error!("urldecode {} error: {}", &$ident, &$e);
+                return $return;
+            }
+        };
+    };
+
+    ($ident:ident) => {
+        str_decode!(@inner $ident, e, render!(@errhtml "URLDecode", &e.to_string()))
+    };
+    (@jsn $ident:ident) => {
+        str_decode!(@inner $ident, e, warp::reply::json(&format!("URLDecode错误：{}", &e)))
+    };
+}
+
 pub async fn run_editor(shutdown: oneshot::Receiver<i32>) {
     let index = warp::path::end().map(|| {
         render!("editor_index.html", &TeraContext::new())
@@ -47,7 +66,8 @@ pub async fn run_editor(shutdown: oneshot::Receiver<i32>) {
 
     let editor = warp::path("editor");
     let editor_clustering = warp::path!("1" / String)
-        .map(|name| {
+        .map(|name: String| {
+            str_decode!(name);
             let mut ctx = TeraContext::new();
             let data: exam::ClusteringExam = super::load_test_data("1", &name)
                 .unwrap_or_else(|e| {
@@ -75,7 +95,8 @@ pub async fn run_editor(shutdown: oneshot::Receiver<i32>) {
         .and(warp::post())
         .and(warp::body::content_length_limit(1024 * 16))
         .and(warp::body::json())
-        .map(|name, opt: exam::ClusteringExam| {
+        .map(|name: String, opt: exam::ClusteringExam| {
+            str_decode!(@jsn name);
             let desc = match super::commit_test_data("1", &name, &opt) {
                 Ok(_) => {
                     log::info!("save test type clustering {}", &name);
