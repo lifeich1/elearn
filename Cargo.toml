@@ -2,7 +2,7 @@
 name = "elearn"
 version = "0.1.0"
 edition = "2018"
-default-run = "elearn_editor"
+default-run = "elearn"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,4 +20,5 @@ serde_derive = "1"
 serde = "1"
 ron = "*"
 urlencoding = "2"
-
+rand = { version = "0.8", features = ["default", "alloc"]}
+chrono = "0.4"

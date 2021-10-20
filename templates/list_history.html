@@ -1,0 +1,12 @@
+<div class="d-flex flex-column-reverse align-items-center">
+    {% for item in data %}
+    <div class="p-1 mt-2">
+        <button
+            class="btn btn-outline-info"
+            type="button"
+            onclick="on_show_history('{{ item }}')">
+            {{ item }}
+        </button>
+    </div>
+    {% endfor %}
+</div>

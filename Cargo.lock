@@ -237,10 +237,12 @@ checksum = "56899898ce76aaf4a0f24d914c97ea6ed976d42fec6ad33fcbb0a1103e07b2b0"
 name = "elearn"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "error-chain",
  "lazy_static",
  "log",
  "log4rs",
+ "rand 0.8.4",
  "ron",
  "serde",
  "serde_derive",
