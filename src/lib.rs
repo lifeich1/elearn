@@ -3,12 +3,12 @@ use log::LevelFilter;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
-use tokio::sync::{mpsc, watch, oneshot};
-use serde::ser::Serialize;
 use serde::de::DeserializeOwned;
+use serde::ser::Serialize;
 use std::fs::File;
+use std::io::Write;
 use std::path::Path;
-use std::io::{Write, Read};
+use tokio::sync::{mpsc, oneshot};
 
 mod exam;
 mod www;
@@ -25,11 +25,20 @@ error_chain! {
 const VAR_PATH: &str = "/var/lifeich1/elearn";
 
 fn test_data_path<T: ToString, U: ToString>(typ: T, name: U) -> String {
-    format!("{}/data/test/{}/{}.ron", VAR_PATH, typ.to_string(), name.to_string())
+    format!(
+        "{}/data/test/{}/{}.ron",
+        VAR_PATH,
+        typ.to_string(),
+        name.to_string()
+    )
 }
 
-fn commit_test_data<T: ToString, U: ToString, V: Serialize>(typ: T, name: U, value: &V) -> Result<()> {
-    let mut out = File::create(test_data_path(typ, name))?;
+fn commit_test_data<T: ToString, U: ToString, V: Serialize>(
+    typ: T,
+    name: U,
+    value: &V,
+) -> Result<()> {
+    let out = File::create(test_data_path(typ, name))?;
     ron::ser::to_writer(out, value)?;
     Ok(())
 }
@@ -46,10 +55,16 @@ fn history_root() -> String {
 }
 
 fn history_dir_path<T: ToString, U: ToString>(typ: T, name: U) -> String {
-    let s = format!("{}/{}/{}", history_root(), typ.to_string(), name.to_string());
+    let s = format!(
+        "{}/{}/{}",
+        history_root(),
+        typ.to_string(),
+        name.to_string()
+    );
     let p = Path::new(&s);
     if !p.exists() {
-        std::fs::create_dir_all(p).unwrap_or_else(|e| panic!("Create test history dir {:?} error: {}", p, e));
+        std::fs::create_dir_all(p)
+            .unwrap_or_else(|e| panic!("Create test history dir {:?} error: {}", p, e));
     }
     s
 }
@@ -58,61 +73,75 @@ fn history_path<T: ToString, U: ToString>(typ: T, name: U, tag: &str) -> String 
     format!("{}/{}.html", history_dir_path(typ, name), tag)
 }
 
-
 fn commit_history<T: ToString, U: ToString>(typ: T, name: U, data: &str) -> Result<()> {
     let tag = chrono::Local::now().format("%F_%Hh%Mm%Ss").to_string();
-    log::info!("commiting new history {}/{}/{}", typ.to_string(), name.to_string(), &tag);
+    log::info!(
+        "commiting new history {}/{}/{}",
+        typ.to_string(),
+        name.to_string(),
+        &tag
+    );
     let mut out = File::create(history_path(typ, name, &tag))?;
     write!(&mut out, "{}", data)?;
     Ok(())
 }
 
-fn load_history<T: ToString, U: ToString>(typ: T, name: U, tag: &str) -> Result<String> {
-    let p = history_path(typ, name, tag);
-    log::info!("opening {}", &p);
-    let mut input = File::open(p)?;
-    let mut result = String::new();
-    input.read_to_string(&mut result)?;
-    Ok(result)
-}
-
 fn list_history_of_kind<T: ToString, U: ToString>(typ: T, name: U) -> Vec<String> {
     let s = history_dir_path(typ, name);
     let p = Path::new(&s);
-    let d = p.read_dir().unwrap_or_else(|e| panic!("Open test history dir {:?} error: {}", p, e));
+    let d = p
+        .read_dir()
+        .unwrap_or_else(|e| panic!("Open test history dir {:?} error: {}", p, e));
     d.filter_map(|result| match result {
-        Ok(entry) => entry.file_name().into_string()
+        Ok(entry) => entry
+            .file_name()
+            .into_string()
             .map_err(|e| log::error!("history name {:?} cannot convert to utf8", e))
-            .ok().and_then(|s| s.strip_suffix(".html").map(String::from)),
-        Err(e) => {
-            log::error!("read dir {:?} error: {}", p, e);
-            None
-        }
-    }).collect()
-}
-
-fn list_names_of_test_type<T: ToString>(typ: T) -> Vec<String> {
-    let datapath = test_data_path(typ.to_string(), "none");
-    let p = Path::new(&datapath).parent()
-        .unwrap_or_else(|| panic!("Cannot get dir of test type {}", typ.to_string()));
-    if !p.exists() {
-        std::fs::create_dir_all(p).unwrap_or_else(|e| panic!("Create test type data dir {:?} error: {}", p, e));
-    }
-    let d = p.read_dir().unwrap_or_else(|e| panic!("Open test type data dir {:?} error: {}", p, e));
-    d.filter_map(|result| match result {
-        Ok(entry) => entry.file_name().into_string()
-            .map_err(|e| log::error!("test name {:?} of test type {} cannot to utf string", e, typ.to_string()))
-            .ok().and_then(|s| s.strip_suffix(".ron").map(String::from)),
+            .ok()
+            .and_then(|s| s.strip_suffix(".html").map(String::from)),
         Err(e) => {
             log::error!("read dir {:?} error: {}", p, e);
             None
         }
     })
-        .collect()
+    .collect()
+}
+
+fn list_names_of_test_type<T: ToString>(typ: T) -> Vec<String> {
+    let datapath = test_data_path(typ.to_string(), "none");
+    let p = Path::new(&datapath)
+        .parent()
+        .unwrap_or_else(|| panic!("Cannot get dir of test type {}", typ.to_string()));
+    if !p.exists() {
+        std::fs::create_dir_all(p)
+            .unwrap_or_else(|e| panic!("Create test type data dir {:?} error: {}", p, e));
+    }
+    let d = p
+        .read_dir()
+        .unwrap_or_else(|e| panic!("Open test type data dir {:?} error: {}", p, e));
+    d.filter_map(|result| match result {
+        Ok(entry) => entry
+            .file_name()
+            .into_string()
+            .map_err(|e| {
+                log::error!(
+                    "test name {:?} of test type {} cannot to utf string",
+                    e,
+                    typ.to_string()
+                )
+            })
+            .ok()
+            .and_then(|s| s.strip_suffix(".ron").map(String::from)),
+        Err(e) => {
+            log::error!("read dir {:?} error: {}", p, e);
+            None
+        }
+    })
+    .collect()
 }
 
 fn prepare_log<T: ToString>(tag: T) -> Result<()> {
-        let logfile = FileAppender::builder()
+    let logfile = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new(
             "{d(%Y-%m-%d %H:%M:%S)} # {M}/{l} - {P}:{I} # {m}{n}",
         )))
@@ -138,20 +167,18 @@ fn expect_log<T: ToString>(tag: T) {
 }
 
 macro_rules! graceful_shutdown {
-    ($done_rx:ident) => {
-        {
-            println!("\nDoing graceful shutdown ...");
-            println!("Press ^C again to halt");
+    ($done_rx:ident) => {{
+        println!("\nDoing graceful shutdown ...");
+        println!("Press ^C again to halt");
 
-            tokio::select! {
-                _ = $done_rx.recv() => {},
-                _ = tokio::signal::ctrl_c() => {
-                    println!("\nforced halt");
-                    log::error!("forced halt");
-                },
-            }
+        tokio::select! {
+            _ = $done_rx.recv() => {},
+            _ = tokio::signal::ctrl_c() => {
+                println!("\nforced halt");
+                log::error!("forced halt");
+            },
         }
-    };
+    }};
 }
 
 pub async fn run_editor() -> Result<()> {

@@ -1,8 +1,8 @@
-use serde_derive::{Deserialize, Serialize};
-use warp::{http::StatusCode, sse::Event, Filter};
-use tokio::sync::{oneshot, mpsc};
-use tera::{Context as TeraContext, Tera};
 use crate::exam;
+use serde_derive::{Deserialize, Serialize};
+use tera::{Context as TeraContext, Tera};
+use tokio::sync::oneshot;
+use warp::Filter;
 
 lazy_static::lazy_static! {
     pub static ref TEMPLATES: Tera = {
@@ -66,7 +66,6 @@ macro_rules! str_decode {
     };
 }
 
-
 macro_rules! load_exam {
     ($typ:expr, $name:expr) => {
         match super::load_test_data($typ, $name) {
@@ -87,35 +86,30 @@ struct SaveHistory {
 }
 
 pub async fn run_editor(shutdown: oneshot::Receiver<i32>) {
-    let index = warp::path::end().map(|| {
-        render!("editor_index.html", &TeraContext::new())
-    });
+    let index = warp::path::end().map(|| render!("editor_index.html", &TeraContext::new()));
 
     let editor = warp::path("editor");
-    let editor_clustering = warp::path!("1" / String)
-        .map(|name: String| {
-            str_decode!(name);
-            let mut ctx = TeraContext::new();
-            let data: exam::ClusteringExam = super::load_test_data("1", &name)
-                .unwrap_or_else(|e| {
-                    log::error!("load ClusteringExam of {} error: {}", name, e);
-                    Default::default()
-                });
-            let col = data.column_count();
-            let tbl = data.table();
-            ctx.insert("data", &tbl);
-            ctx.insert("column", &col);
-            render!("editor_clustering.html", &ctx)
+    let editor_clustering = warp::path!("1" / String).map(|name: String| {
+        str_decode!(name);
+        let mut ctx = TeraContext::new();
+        let data: exam::ClusteringExam = super::load_test_data("1", &name).unwrap_or_else(|e| {
+            log::error!("load ClusteringExam of {} error: {}", name, e);
+            Default::default()
         });
+        let col = data.column_count();
+        let tbl = data.table();
+        ctx.insert("data", &tbl);
+        ctx.insert("column", &col);
+        render!("editor_clustering.html", &ctx)
+    });
 
     let card = warp::path("card");
-    let card_testnameopts = warp::path!("test_name_option" / String)
-        .map(|typ| {
-            let mut ctx = TeraContext::new();
-            let names = super::list_names_of_test_type(typ);
-            ctx.insert("opts", &names);
-            render!("test_name_option.html", &ctx)
-        });
+    let card_testnameopts = warp::path!("test_name_option" / String).map(|typ| {
+        let mut ctx = TeraContext::new();
+        let names = super::list_names_of_test_type(typ);
+        ctx.insert("opts", &names);
+        render!("test_name_option.html", &ctx)
+    });
 
     let submit = warp::path("submit");
     let submit_clustering = warp::path!("1" / String)
@@ -157,38 +151,33 @@ pub async fn run_editor(shutdown: oneshot::Receiver<i32>) {
 }
 
 pub async fn run(shutdown: oneshot::Receiver<i32>) {
-    let index = warp::path::end().map(|| {
-        render!("index.html", &TeraContext::new())
-    });
+    let index = warp::path::end().map(|| render!("index.html", &TeraContext::new()));
 
     let card = warp::path("card");
-    let card_testnameopts = warp::path!("test_name_option" / String)
-        .map(|typ| {
-            let mut ctx = TeraContext::new();
-            let names = super::list_names_of_test_type(typ);
-            ctx.insert("opts", &names);
-            render!("test_name_option.html", &ctx)
-        });
+    let card_testnameopts = warp::path!("test_name_option" / String).map(|typ| {
+        let mut ctx = TeraContext::new();
+        let names = super::list_names_of_test_type(typ);
+        ctx.insert("opts", &names);
+        render!("test_name_option.html", &ctx)
+    });
 
-    let welcome = warp::path!("welcome" / String / String)
-        .map(|typ, name| {
-            let mut ctx = TeraContext::new();
-            ctx.insert("type", &typ);
-            ctx.insert("name", &name);
-            render!("welcome.html", &ctx)
-        });
+    let welcome = warp::path!("welcome" / String / String).map(|typ, name| {
+        let mut ctx = TeraContext::new();
+        ctx.insert("type", &typ);
+        ctx.insert("name", &name);
+        render!("welcome.html", &ctx)
+    });
 
     let exam = warp::path("exam");
-    let exam_clustering = warp::path!("1" / String / usize)
-        .map(|name: String, count| {
-            str_decode!(name);
-            let data: exam::ClusteringExam = load_exam!("1", &name);
-            let data = data.gen_probs(count);
-            let mut ctx = TeraContext::new();
-            ctx.insert("item_count", &count);
-            ctx.insert("data", &data);
-            render!("test_clustering.html", &ctx)
-        });
+    let exam_clustering = warp::path!("1" / String / usize).map(|name: String, count| {
+        str_decode!(name);
+        let data: exam::ClusteringExam = load_exam!("1", &name);
+        let data = data.gen_probs(count);
+        let mut ctx = TeraContext::new();
+        ctx.insert("item_count", &count);
+        ctx.insert("data", &data);
+        render!("test_clustering.html", &ctx)
+    });
 
     let save_history = warp::path!("save_history")
         .and(warp::post())
@@ -206,8 +195,8 @@ pub async fn run(shutdown: oneshot::Receiver<i32>) {
             warp::reply::json(&desc)
         });
 
-    let list_history = warp::path!("list_history" / String / String)
-        .map(|typ: String, name: String| {
+    let list_history =
+        warp::path!("list_history" / String / String).map(|typ: String, name: String| {
             str_decode!(name);
             str_decode!(typ);
             let mut ctx = TeraContext::new();
@@ -215,8 +204,7 @@ pub async fn run(shutdown: oneshot::Receiver<i32>) {
             render!("list_history.html", &ctx)
         });
 
-    let static_history = warp::path("history")
-        .and(warp::fs::dir(super::history_root()));
+    let static_history = warp::path("history").and(warp::fs::dir(super::history_root()));
 
     let static_files = warp::path("static").and(warp::fs::dir("./static"));
     let favicon = warp::path!("favicon.ico").and(warp::fs::file("./static/favicon.ico"));
