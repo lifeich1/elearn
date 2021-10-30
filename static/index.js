@@ -75,7 +75,7 @@ var cur_prob_n = null;
 
 function on_begin_test(type, name) {
     use_central_loading_mark();
-    $('div#mainpage').load('/exam/' + type + '/' + name + '/10', function() {
+    $('div#mainpage').load('/exam/' + type + '/' + name + '/100', function() {
         clustering_pick_prob(0);
     });
 }
@@ -95,7 +95,7 @@ function clustering_pick_prob(n) {
     cur_prob_n = n;
     $('div#mainpage div#test-container div.card').hide();
     var q = $('div#mainpage div#test-container div.card#test-card-' + n);
-    if (q.length == 0) {
+    if (q.length == 0 || clustering_probtype_count("WA") >= 10) {
         clustering_summary();
         return;
     }
@@ -115,10 +115,15 @@ function clustering_set_progress(n, morecls) {
     return q;
 }
 
+function clustering_probtype_count(typ) {
+    return $('div#test-container div.card[aria-label="' + typ + '"]').length;
+}
+
 function clustering_summary() {
+    $('div#test-container div.card[aria-label="DA"]').remove();
     $('div#mainpage div#test-container div.card').show();
     enforce_show($('button#wa-only-toggle'));
-    var n = $('div#test-container div.card[aria-label="AC"]').length;
+    var n = clustering_probtype_count("AC");
     clustering_set_progress(n, 'bg-success').text(n + '/' + cur_prob_n + '分');
     save_history();
 }

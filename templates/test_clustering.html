@@ -15,7 +15,7 @@
     onclick="clustering_toggle_waonly()">切换只显示错题</button>
 
 {% for item in data %}
-<div class="card m-3 shadow" id="test-card-{{ item.id }}" hidden>
+<div class="card m-3 shadow" id="test-card-{{ item.id }}" aria-label="DA" hidden>
     <div class="card-body">
         <h5 class="card-title">第{{ item.id + 1 }}题：选出与<span class="text-primary">{{ item.head }}</span>同类的选项</h5>
         {% for opt in item.opts %}

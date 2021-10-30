@@ -200,7 +200,9 @@ pub async fn run(shutdown: oneshot::Receiver<i32>) {
             str_decode!(name);
             str_decode!(typ);
             let mut ctx = TeraContext::new();
-            ctx.insert("data", &super::list_history_of_kind(&typ, &name));
+            let mut v = super::list_history_of_kind(&typ, &name);
+            v.sort();
+            ctx.insert("data", &v);
             render!("list_history.html", &ctx)
         });
 
