@@ -38,6 +38,13 @@
             </label>
         </div>
         {% endfor %}
+        <button
+            class="btn btn-secondary"
+            aria-label="opt-surrender"
+            type="button"
+            onclick="on_clustering_choose({{ item.id }}, -1, {{ item.answer}})">
+            放弃
+        </button>
         <p id="explain-{{ item.id }}" class="text-danger" hidden>{{ item.explain }}</p>
     </div>
 </div>

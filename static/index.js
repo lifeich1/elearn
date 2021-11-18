@@ -120,6 +120,7 @@ function clustering_probtype_count(typ) {
 }
 
 function clustering_summary() {
+    $('div#test-container button[aria-label="opt-surrender"]').remove();
     $('div#test-container div.card[aria-label="DA"]').remove();
     $('div#mainpage div#test-container div.card').show();
     enforce_show($('button#wa-only-toggle'));
