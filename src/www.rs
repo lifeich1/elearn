@@ -4,15 +4,41 @@ use tera::{Context as TeraContext, Tera};
 use tokio::sync::oneshot;
 use warp::Filter;
 
+macro_rules! load_templates {
+    (@inner $v:ident) => {};
+    (@inner $v:ident, ) => {};
+    (@inner $v:ident, $name:literal, $($tail:tt)*) => {
+        {
+            $v.push((concat!($name, ".html"), include_str!(concat!("../templates/", $name, ".html"))));
+            load_templates!(@inner $v, $($tail)*);
+        }
+    };
+    [$name:literal, $($tail:tt)*] => {
+        {
+            let mut v = Vec::default();
+            load_templates!(@inner v, $name, $($tail)*);
+            v
+        }
+    };
+}
+
 lazy_static::lazy_static! {
     pub static ref TEMPLATES: Tera = {
-        let tera = match Tera::new("templates/**/*.html") {
-            Ok(t) => t,
-            Err(e) => {
-                log::error!("Parsing error(s): {}", e);
-                ::std::process::exit(1);
-            }
-        };
+        let mut tera = Tera::default();
+        let files = load_templates![
+            "editor_clustering",
+            "editor_index",
+            "failure",
+            "index",
+            "list_history",
+            "test_clustering",
+            "test_name_option",
+            "welcome",
+            ];
+        if let Err(e) = tera.add_raw_templates(files) {
+            log::error!("Parsing error(s): {}", e);
+            ::std::process::exit(1);
+        }
         tera
     };
 }
@@ -49,7 +75,7 @@ macro_rules! str_decode {
                 log::error!("urldecode {} error: {}", &$expr, &$e);
                 return $return;
             }
-        };
+        }
     };
     (@inner $ident:ident, $e:ident, $return:expr) => {
         let $ident = str_decode!(@assign $ident, $e, $return);
