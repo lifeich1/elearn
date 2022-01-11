@@ -16,4 +16,6 @@
 1. [x] 渲染作答结果、记录
 1. [x] 修改考试类型为错题数到达设定后提前终止
 1. [ ] 使用`include_str/bytes`宏，满足crate bin发布条件
+    1. [x] tera使用`add_raw_templates()`加载容纳的html文件
+    1. [ ] 将static文件释放到固定位置以使用warp fs
 1. [ ] 携带“日本假名”材料以便检查发现不存在后创建
