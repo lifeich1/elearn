@@ -23,6 +23,7 @@ error_chain! {
 }
 
 const VAR_PATH: &str = "/var/lifeich1/elearn";
+const LOGYML_PATH: &str = "/var/lifeich1/elearn/log4rs.yml";
 
 fn test_data_path<T: ToString, U: ToString>(typ: T, name: U) -> String {
     format!(
@@ -140,21 +141,29 @@ fn list_names_of_test_type<T: ToString>(typ: T) -> Vec<String> {
     .collect()
 }
 
+fn str_dump2file<P: AsRef<Path>, T: ToString>(path: P, text: T, is_force: bool) -> Result<()> {
+    let p = path.as_ref();
+    if p.exists() && !is_force {
+        return Ok(());
+    }
+    let d = p.parent().unwrap_or_else(|| panic!("path {:?} no parent", p));
+    if !d.exists() {
+        std::fs::create_dir_all(d)
+            .unwrap_or_else(|e| panic!("Create data dir {:?} error: {}", d, e));
+    }
+    let mut out = File::create(p)?;
+    write!(&mut out, "{}", text.to_string())?;
+    Ok(())
+}
+
 fn prepare_log<T: ToString>(tag: T) -> Result<()> {
-    let logfile = FileAppender::builder()
-        .encoder(Box::new(PatternEncoder::new(
-            "{d(%Y-%m-%d %H:%M:%S)} # {M}/{l} - {P}:{I} # {m}{n}",
-        )))
-        .build(format!("{}/{}.log", VAR_PATH, tag.to_string()))?;
+    str_dump2file(Path::new(LOGYML_PATH), include_str!("../assets/log4rs.yml"), false)?;
 
-    let config = Config::builder()
-        .appender(Appender::builder().build("logfile", Box::new(logfile)))
-        .build(Root::builder().appender("logfile").build(LevelFilter::Info))?;
-
-    log4rs::init_config(config)?;
+    log4rs::init_file(LOGYML_PATH, Default::default()).unwrap_or_else(|e| panic!("prepare log fatal error(s): {}", e));
 
     log::info!(
-        "{} version {}; logger prepared",
+        "[tag {}] {} version {}; logger prepared",
+        tag.to_string(),
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
     );
