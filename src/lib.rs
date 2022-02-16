@@ -1,8 +1,4 @@
 use error_chain::error_chain;
-use log::LevelFilter;
-use log4rs::append::file::FileAppender;
-use log4rs::config::{Appender, Config, Root};
-use log4rs::encode::pattern::PatternEncoder;
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use std::fs::File;

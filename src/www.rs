@@ -158,7 +158,8 @@ pub async fn run_editor(shutdown: oneshot::Receiver<i32>) {
         });
 
     let static_files = warp::path("static").and(warp::fs::dir(var_path!(@static)));
-    let favicon = warp::path!("favicon.ico").and(warp::fs::file(concat!(var_path!(@static), "/favicon.ico")));
+    let favicon =
+        warp::path!("favicon.ico").and(warp::fs::file(concat!(var_path!(@static), "/favicon.ico")));
 
     let app = index
         .or(editor.and(editor_clustering))
@@ -235,7 +236,8 @@ pub async fn run(shutdown: oneshot::Receiver<i32>) {
     let static_history = warp::path("history").and(warp::fs::dir(super::history_root()));
 
     let static_files = warp::path("static").and(warp::fs::dir(var_path!(@static)));
-    let favicon = warp::path!("favicon.ico").and(warp::fs::file(concat!(var_path!(@static), "/favicon.ico")));
+    let favicon =
+        warp::path!("favicon.ico").and(warp::fs::file(concat!(var_path!(@static), "/favicon.ico")));
 
     let app = index
         .or(welcome)
