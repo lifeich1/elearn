@@ -10,9 +10,6 @@ use std::io::Write;
 use std::path::Path;
 use tokio::sync::{mpsc, oneshot};
 
-mod exam;
-mod www;
-
 error_chain! {
     foreign_links {
         Io(std::io::Error);
@@ -22,8 +19,23 @@ error_chain! {
     }
 }
 
-const VAR_PATH: &str = "/var/lifeich1/elearn";
-const LOGYML_PATH: &str = "/var/lifeich1/elearn/log4rs.yml";
+macro_rules! var_path {
+    () => {
+        "/var/lifeich1/elearn"
+    };
+    (@log) => {
+        concat!(var_path!(), "/log4rs.yml")
+    };
+    (@static) => {
+        concat!(var_path!(), "/data/static")
+    };
+}
+
+mod exam;
+mod www;
+
+const VAR_PATH: &str = var_path!();
+const LOGYML_PATH: &str = var_path!(@log);
 
 fn test_data_path<T: ToString, U: ToString>(typ: T, name: U) -> String {
     format!(
@@ -141,25 +153,45 @@ fn list_names_of_test_type<T: ToString>(typ: T) -> Vec<String> {
     .collect()
 }
 
-fn str_dump2file<P: AsRef<Path>, T: ToString>(path: P, text: T, is_force: bool) -> Result<()> {
+fn b_dump2file<P: AsRef<Path>>(path: P, data: &[u8], is_force: bool) -> Result<()> {
     let p = path.as_ref();
     if p.exists() && !is_force {
         return Ok(());
     }
-    let d = p.parent().unwrap_or_else(|| panic!("path {:?} no parent", p));
+    let d = p
+        .parent()
+        .unwrap_or_else(|| panic!("path {:?} no parent", p));
     if !d.exists() {
         std::fs::create_dir_all(d)
             .unwrap_or_else(|e| panic!("Create data dir {:?} error: {}", d, e));
     }
     let mut out = File::create(p)?;
-    write!(&mut out, "{}", text.to_string())?;
+    out.write_all(data)?;
     Ok(())
 }
 
-fn prepare_log<T: ToString>(tag: T) -> Result<()> {
-    str_dump2file(Path::new(LOGYML_PATH), include_str!("../assets/log4rs.yml"), false)?;
+macro_rules! flat_extracts {
+    ($dd:expr, $sd:literal; ) => { Ok(()) };
+    ($dd:expr, $sd:literal; $fn:literal, $($tail:literal, )*) => {
+        {
+            b_dump2file(
+                Path::new($dd).join($fn),
+                include_bytes!(concat!($sd, "/", $fn)),
+                true,
+            ).and_then(|_| flat_extracts!($dd, $sd; $($tail, )*))
+        }
+    };
+}
 
-    log4rs::init_file(LOGYML_PATH, Default::default()).unwrap_or_else(|e| panic!("prepare log fatal error(s): {}", e));
+fn prepare_log<T: ToString>(tag: T) -> Result<()> {
+    b_dump2file(
+        Path::new(LOGYML_PATH),
+        include_bytes!("../assets/log4rs.yml"),
+        false,
+    )?;
+
+    log4rs::init_file(LOGYML_PATH, Default::default())
+        .unwrap_or_else(|e| panic!("prepare log fatal error(s): {}", e));
 
     log::info!(
         "[tag {}] {} version {}; logger prepared",
@@ -167,6 +199,13 @@ fn prepare_log<T: ToString>(tag: T) -> Result<()> {
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
     );
+
+    flat_extracts!(
+        var_path!(@static), "../static";
+        "editor_index.js",
+        "index.js",
+        "favicon.ico",
+    )?;
 
     Ok(())
 }
