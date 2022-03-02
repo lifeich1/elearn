@@ -174,7 +174,10 @@ function on_clustering_choose(itemid, optid, answer) {
         q.attr('aria-label', 'AC');
     }
     $('div#test-container div.card#test-card-' + itemid + ' input').attr('disabled', 'true');
-    clustering_pick_prob(itemid + 1);
+    function f1() {
+        clustering_pick_prob(itemid + 1);
+    }
+    setTimeout(f1, 1000);
 }
 
 function on_show_history_list(type, name) {
