@@ -78,6 +78,7 @@ function on_begin_test(type, name) {
     $('div#mainpage').load('/exam/' + type + '/' + name + '/100', function() {
         clustering_pick_prob(0);
     });
+    $(document).keyup(clustering_keyup);
 }
 
 function on_begin_test_sel() {
@@ -103,6 +104,15 @@ function clustering_pick_prob(n) {
     clustering_set_progress(n);
 }
 
+function clustering_keyup(event) {
+    var n = cur_prob_n;
+    if (event.keyCode >= '1'.charCodeAt() && event.keyCode <= '4'.charCodeAt()) {
+        $('input#option-radio-' + n + '-' + (event.keyCode - 49)).click();
+    } else if (event.keyCode == '0'.charCodeAt()) {
+        $('div#mainpage div#test-container div.card#test-card-' + n + ' button[aria-label="opt-surrender"]').click();
+    }
+}
+
 function clustering_set_progress(n, morecls) {
     var q = $('div.progress-bar#test-progressbar');
     if (morecls) {
@@ -126,6 +136,7 @@ function clustering_summary() {
     enforce_show($('button#wa-only-toggle'));
     var n = clustering_probtype_count("AC");
     clustering_set_progress(n, 'bg-success').text(n + '/' + cur_prob_n + '分');
+    $(document).unbind('keyup', clustering_keyup);
     save_history();
 }
 
